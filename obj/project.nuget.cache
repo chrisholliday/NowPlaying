@@ -1,0 +1,18 @@
+{
+  "version": 2,
+  "dgSpecHash": "XeV03cJReHs=",
+  "success": true,
+  "projectFilePath": "E:\\Projects\\NowPlaying\\NowPlaying.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\chris\\.nuget\\packages\\communitytoolkit.mvvm\\8.4.2\\communitytoolkit.mvvm.8.4.2.nupkg.sha512",
+    "C:\\Users\\chris\\.nuget\\packages\\h.generatedicons.system.drawing\\2.4.1\\h.generatedicons.system.drawing.2.4.1.nupkg.sha512",
+    "C:\\Users\\chris\\.nuget\\packages\\h.notifyicon\\2.4.1\\h.notifyicon.2.4.1.nupkg.sha512",
+    "C:\\Users\\chris\\.nuget\\packages\\h.notifyicon.wpf\\2.4.1\\h.notifyicon.wpf.2.4.1.nupkg.sha512",
+    "C:\\Users\\chris\\.nuget\\packages\\microsoft.extensions.dependencyinjection\\10.0.12\\microsoft.extensions.dependencyinjection.10.0.12.nupkg.sha512",
+    "C:\\Users\\chris\\.nuget\\packages\\microsoft.extensions.dependencyinjection.abstractions\\10.0.12\\microsoft.extensions.dependencyinjection.abstractions.10.0.12.nupkg.sha512",
+    "C:\\Users\\chris\\.nuget\\packages\\wpf-ui\\4.3.0\\wpf-ui.4.3.0.nupkg.sha512",
+    "C:\\Users\\chris\\.nuget\\packages\\wpf-ui.abstractions\\4.3.0\\wpf-ui.abstractions.4.3.0.nupkg.sha512",
+    "C:\\Users\\chris\\.nuget\\packages\\microsoft.windows.sdk.net.ref\\10.0.19041.57\\microsoft.windows.sdk.net.ref.10.0.19041.57.nupkg.sha512"
+  ],
+  "logs": []
+}
