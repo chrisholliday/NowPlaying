@@ -22,8 +22,8 @@
         <BooleanToVisibilityConverter x:Key="BoolToVisConverter" />
 
         <Style x:Key="FluentCircleButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="#30FFFFFF" />
-            <Setter Property="Foreground" Value="#FFFFFF" />
+            <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
             <Setter Property="BorderThickness" Value="0" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="Width" Value="36" />
@@ -38,10 +38,10 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#45FFFFFF" />
+                                <Setter TargetName="border" Property="Background" Value="{DynamicResource SurfaceHoverBrush}" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#60FFFFFF" />
+                                <Setter TargetName="border" Property="Background" Value="{DynamicResource SurfacePressedBrush}" />
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter TargetName="border" Property="Opacity" Value="0.4" />
@@ -55,7 +55,7 @@
         <Style x:Key="FluentPlayButtonStyle" TargetType="Button" BasedOn="{StaticResource FluentCircleButtonStyle}">
             <Setter Property="Width" Value="44" />
             <Setter Property="Height" Value="44" />
-            <Setter Property="Background" Value="#0078D4" />
+            <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -66,10 +66,10 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#1086E0" />
+                                <Setter TargetName="border" Property="Background" Value="{DynamicResource AccentHoverBrush}" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#006CBE" />
+                                <Setter TargetName="border" Property="Background" Value="{DynamicResource AccentPressedBrush}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -78,8 +78,8 @@
         </Style>
 
         <Style x:Key="AppBadgeButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="#25FFFFFF" />
-            <Setter Property="Foreground" Value="#E0E0E0" />
+            <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
             <Setter Property="BorderThickness" Value="0" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="Padding" Value="8,4" />
@@ -94,11 +94,11 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#40FFFFFF" />
-                                <Setter Property="Foreground" Value="#FFFFFF" />
+                                <Setter TargetName="border" Property="Background" Value="{DynamicResource SurfaceHoverBrush}" />
+                                <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#55FFFFFF" />
+                                <Setter TargetName="border" Property="Background" Value="{DynamicResource SurfacePressedBrush}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -118,8 +118,8 @@
         </Border.Effect>
 
         <!-- Main Window Background (Acrylic / Dark Fluent) -->
-        <Border Background="#EB202022"
-                BorderBrush="#30FFFFFF"
+        <Border Background="{DynamicResource FlyoutBackgroundBrush}"
+            BorderBrush="{DynamicResource FlyoutBorderBrush}"
                 BorderThickness="1"
                 CornerRadius="16"
                 ClipToBounds="True">
@@ -131,21 +131,21 @@
 
                 <!-- Header Bar -->
                 <Border Grid.Row="0"
-                        Background="#20000000"
-                        BorderBrush="#15FFFFFF"
+                        Background="{DynamicResource HeaderBackgroundBrush}"
+                        BorderBrush="{DynamicResource HeaderBorderBrush}"
                         BorderThickness="0,0,0,1"
                         Padding="16,12">
                     <Grid>
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                             <Path Data="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"
-                                  Fill="#0098FF"
+                                  Fill="{DynamicResource AccentBrush}"
                                   Width="18"
                                   Height="18"
                                   Stretch="Uniform"
                                   VerticalAlignment="Center"
                                   Margin="0,0,8,0" />
                             <TextBlock Text="{Binding HeaderTitle}"
-                                       Foreground="#FFFFFF"
+                                       Foreground="{DynamicResource PrimaryTextBrush}"
                                        FontSize="14"
                                        FontWeight="SemiBold"
                                        VerticalAlignment="Center" />
@@ -156,7 +156,7 @@
                                 Height="28"
                                 Background="Transparent"
                                 BorderThickness="0"
-                                Foreground="#A0FFFFFF"
+                                Foreground="{DynamicResource CloseTextBrush}"
                                 Cursor="Hand"
                                 Click="CloseButton_Click"
                                 ToolTip="Close Flyout">
@@ -167,8 +167,8 @@
                                     </Border>
                                     <ControlTemplate.Triggers>
                                         <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter TargetName="btnBorder" Property="Background" Value="#30FFFFFF" />
-                                            <Setter Property="Foreground" Value="#FFFFFF" />
+                                            <Setter TargetName="btnBorder" Property="Background" Value="{DynamicResource SurfaceBrush}" />
+                                            <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
                                         </Trigger>
                                     </ControlTemplate.Triggers>
                                 </ControlTemplate>
@@ -187,8 +187,8 @@
                         <ItemsControl ItemsSource="{Binding MediaCards}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate DataType="{x:Type vm:MediaCardViewModel}">
-                                    <Border Background="#302A2D34"
-                                            BorderBrush="#25FFFFFF"
+                                        <Border Background="{DynamicResource CardBackgroundBrush}"
+                                            BorderBrush="{DynamicResource CardBorderBrush}"
                                             BorderThickness="1"
                                             CornerRadius="12"
                                             Margin="0,0,0,10"
@@ -237,11 +237,11 @@
                                                     <Border Width="7"
                                                             Height="7"
                                                             CornerRadius="4"
-                                                            Background="#00D26A"
+                                                            Background="{DynamicResource PlayingBrush}"
                                                             Margin="0,0,5,0" />
                                                     <TextBlock Text="Playing"
                                                                FontSize="11"
-                                                               Foreground="#00D26A"
+                                                               Foreground="{DynamicResource PlayingBrush}"
                                                                FontWeight="Medium" />
                                                 </StackPanel>
                                             </Grid>
@@ -258,13 +258,13 @@
                                                         Width="60"
                                                         Height="60"
                                                         CornerRadius="8"
-                                                        Background="#20FFFFFF"
+                                                        Background="{DynamicResource SurfaceBrush}"
                                                         ClipToBounds="True"
                                                         Margin="0,0,12,0">
                                                     <Grid>
                                                         <!-- Placeholder disc icon -->
                                                         <Path Data="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 14.5c-2.49 0-4.5-2.01-4.5-4.5S9.51 7.5 12 7.5s4.5 2.01 4.5 4.5-2.01 4.5-4.5 4.5z"
-                                                              Fill="#40FFFFFF"
+                                                              Fill="{DynamicResource PlaceholderBrush}"
                                                               Width="28"
                                                               Height="28"
                                                               Stretch="Uniform"
@@ -279,21 +279,21 @@
                                                 <!-- Text info -->
                                                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                                     <TextBlock Text="{Binding Title}"
-                                                               Foreground="#FFFFFF"
+                                                               Foreground="{DynamicResource PrimaryTextBrush}"
                                                                FontSize="14"
                                                                FontWeight="SemiBold"
                                                                TextTrimming="CharacterEllipsis"
                                                                TextWrapping="NoWrap"
                                                                ToolTip="{Binding Title}" />
                                                     <TextBlock Text="{Binding Artist}"
-                                                               Foreground="#B0B5BA"
+                                                               Foreground="{DynamicResource SecondaryTextBrush}"
                                                                FontSize="12"
                                                                TextTrimming="CharacterEllipsis"
                                                                TextWrapping="NoWrap"
                                                                Margin="0,2,0,0"
                                                                ToolTip="{Binding Artist}" />
                                                     <TextBlock Text="{Binding Album}"
-                                                               Foreground="#757D86"
+                                                               Foreground="{DynamicResource MutedTextBrush}"
                                                                FontSize="11"
                                                                TextTrimming="CharacterEllipsis"
                                                                TextWrapping="NoWrap"
@@ -316,18 +316,18 @@
                                                              Minimum="0"
                                                              Maximum="100"
                                                              Value="{Binding ProgressPercentage, Mode=OneWay}"
-                                                             Foreground="#0078D4"
-                                                             Background="#30FFFFFF"
+                                                             Foreground="{DynamicResource AccentBrush}"
+                                                             Background="{DynamicResource SurfaceBrush}"
                                                              BorderThickness="0" />
 
                                                 <Grid Grid.Row="1" Margin="0,3,0,0">
                                                     <TextBlock Text="{Binding PositionText}"
                                                                FontSize="10"
-                                                               Foreground="#80FFFFFF"
+                                                               Foreground="{DynamicResource SubtleTextBrush}"
                                                                HorizontalAlignment="Left" />
                                                     <TextBlock Text="{Binding DurationText}"
                                                                FontSize="10"
-                                                               Foreground="#80FFFFFF"
+                                                               Foreground="{DynamicResource SubtleTextBrush}"
                                                                HorizontalAlignment="Right" />
                                                 </Grid>
                                             </Grid>
@@ -344,7 +344,7 @@
                                                         Margin="0,0,12,0"
                                                         ToolTip="Previous Track">
                                                     <Path Data="M6 6h2v12H6zm3.5 6l8.5 6V6z"
-                                                          Fill="#FFFFFF"
+                                                          Fill="{DynamicResource PrimaryTextBrush}"
                                                           Width="14"
                                                           Height="14"
                                                           Stretch="Uniform" />
@@ -357,7 +357,7 @@
                                                     <Grid>
                                                         <!-- Play Icon (shown when paused) -->
                                                         <Path Data="M8 5v14l11-7z"
-                                                              Fill="#FFFFFF"
+                                                              Fill="{DynamicResource PrimaryTextBrush}"
                                                               Width="16"
                                                               Height="16"
                                                               Stretch="Uniform"
@@ -376,7 +376,7 @@
 
                                                         <!-- Pause Icon (shown when playing) -->
                                                         <Path Data="M6 19h4V5H6v14zm8-14v14h4V5h-4z"
-                                                              Fill="#FFFFFF"
+                                                              Fill="{DynamicResource PrimaryTextBrush}"
                                                               Width="16"
                                                               Height="16"
                                                               Stretch="Uniform">
@@ -401,7 +401,7 @@
                                                         Margin="12,0,0,0"
                                                         ToolTip="Next Track">
                                                     <Path Data="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"
-                                                          Fill="#FFFFFF"
+                                                          Fill="{DynamicResource PrimaryTextBrush}"
                                                           Width="14"
                                                           Height="14"
                                                           Stretch="Uniform" />

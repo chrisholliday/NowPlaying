@@ -32,3 +32,6 @@ E:\Projects\NowPlaying\obj\Release\net10.0-windows10.0.19041.0\refint\NowPlaying
 E:\Projects\NowPlaying\obj\Release\net10.0-windows10.0.19041.0\NowPlaying.pdb
 E:\Projects\NowPlaying\obj\Release\net10.0-windows10.0.19041.0\NowPlaying.genruntimeconfig.cache
 E:\Projects\NowPlaying\obj\Release\net10.0-windows10.0.19041.0\ref\NowPlaying.dll
+E:\Projects\NowPlaying\obj\Release\net10.0-windows10.0.19041.0\Views\OptionsWindow.baml
+E:\Projects\NowPlaying\obj\Release\net10.0-windows10.0.19041.0\Views\OptionsWindow.g.cs
+E:\Projects\NowPlaying\obj\Release\net10.0-windows10.0.19041.0\NowPlaying.sourcelink.json

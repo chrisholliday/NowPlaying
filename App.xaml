@@ -9,6 +9,29 @@
                 <ui:ControlsDictionary />
                 <ui:ThemesDictionary Theme="Dark" />
             </ResourceDictionary.MergedDictionaries>
+            <SolidColorBrush x:Key="FlyoutBackgroundBrush" Color="#EB202022" />
+            <SolidColorBrush x:Key="FlyoutBorderBrush" Color="#30FFFFFF" />
+            <SolidColorBrush x:Key="HeaderBackgroundBrush" Color="#20000000" />
+            <SolidColorBrush x:Key="HeaderBorderBrush" Color="#15FFFFFF" />
+            <SolidColorBrush x:Key="CardBackgroundBrush" Color="#302A2D34" />
+            <SolidColorBrush x:Key="CardBorderBrush" Color="#25FFFFFF" />
+            <SolidColorBrush x:Key="SurfaceBrush" Color="#30FFFFFF" />
+            <SolidColorBrush x:Key="SurfaceHoverBrush" Color="#45FFFFFF" />
+            <SolidColorBrush x:Key="SurfacePressedBrush" Color="#60FFFFFF" />
+            <SolidColorBrush x:Key="PrimaryTextBrush" Color="#FFFFFFFF" />
+            <SolidColorBrush x:Key="SecondaryTextBrush" Color="#FFB0B5BA" />
+            <SolidColorBrush x:Key="MutedTextBrush" Color="#FF757D86" />
+            <SolidColorBrush x:Key="SubtleTextBrush" Color="#80FFFFFF" />
+            <SolidColorBrush x:Key="CloseTextBrush" Color="#A0FFFFFF" />
+            <SolidColorBrush x:Key="PlaceholderBrush" Color="#40FFFFFF" />
+            <SolidColorBrush x:Key="AccentBrush" Color="#FF0078D4" />
+            <SolidColorBrush x:Key="AccentHoverBrush" Color="#FF1086E0" />
+            <SolidColorBrush x:Key="AccentPressedBrush" Color="#FF006CBE" />
+            <SolidColorBrush x:Key="PlayingBrush" Color="#FF00D26A" />
+            <SolidColorBrush x:Key="SettingsWindowBackgroundBrush" Color="#FFF3F3F3" />
+            <SolidColorBrush x:Key="SettingsCardBrush" Color="#FFFAFAFA" />
+            <SolidColorBrush x:Key="SettingsTextBrush" Color="#FF202020" />
+            <SolidColorBrush x:Key="SettingsSecondaryTextBrush" Color="#FF606060" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>

@@ -15,6 +15,8 @@ It detects and controls media playing across desktop and browser applications (S
 - **Full Playback Controls**: Interactive Previous, Play/Pause, and Next buttons bound to the active media session.
 - **Multi-Player Support**: Automatically tracks multiple concurrent or paused media sessions with currently playing audio sorted to the top.
 - **Dismiss on Blur**: Automatically hides when you click outside the flyout, matching native Windows 11 taskbar behavior.
+- **Startup Option**: Choose whether the app starts when you sign in to Windows. Startup launches directly to the tray.
+- **Theme Options**: Choose Light, Dark, or follow the Windows app-mode setting. Theme changes apply immediately.
 
 ---
 
@@ -33,6 +35,8 @@ This project serves as a practical, modern open-source learning project for C# a
    - Uses `Microsoft.Extensions.DependencyInjection` to decouple media management, window activation, view models, and views.
 5. **Dynamic System Tray Icon**:
    - Generates anti-aliased 32x32 GDI+ tray icons on the fly with active (playing) and idle (paused) states without requiring external image assets.
+6. **User Preferences**:
+   - Saves theme selection in `%LocalAppData%\NowPlaying\settings.json` and registers startup through the current user's Windows Run key.
 
 ---
 
@@ -48,13 +52,16 @@ NowPlaying/
 │   ├── IMediaManagerService.cs    # Interface for GSMTC media control
 │   ├── MediaManagerService.cs     # WinRT media session tracking & thumbnail extraction
 │   ├── AppInfoHelper.cs           # AUMID resolution, app names, and executable icons
-│   └── TrayIconHelper.cs          # Dynamic GDI+ tray icon generation
+│   ├── TrayIconHelper.cs          # Dynamic GDI+ tray icon generation
+│   └── UserSettingsService.cs     # Theme preference and Windows startup registration
 ├── ViewModels/
 │   ├── MediaCardViewModel.cs      # ViewModel for individual player cards with commands
 │   └── NowPlayingFlyoutViewModel.cs# ViewModel managing the active session collection
 ├── Views/
 │   ├── NowPlayingFlyout.xaml      # Windows 11 Fluent dark flyout UI
-│   └── NowPlayingFlyout.xaml.cs   # Tray positioning and blur dismissal logic
+│   ├── NowPlayingFlyout.xaml.cs   # Tray positioning and blur dismissal logic
+│   ├── OptionsWindow.xaml         # Startup and appearance options
+│   └── OptionsWindow.xaml.cs      # Applies option changes
 ├── App.xaml / App.xaml.cs          # Tray-only app lifecycle, DI setup & context menu
 └── NowPlaying.csproj              # Project file targeting net10.0-windows10.0.19041.0
 ```
@@ -76,3 +83,5 @@ dotnet run
 dotnet build -c Release
 ```
 The compiled binary will be located in [bin/Release/net10.0-windows10.0.19041.0/NowPlaying.exe](bin/Release/net10.0-windows10.0.19041.0/NowPlaying.exe).
+
+Right-click the tray icon and choose **Options...** to change the startup and appearance settings. Enabling startup adds a per-user Windows sign-in entry; it does not require administrator privileges.

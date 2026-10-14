@@ -32,3 +32,6 @@ E:\Projects\NowPlaying\obj\Debug\net10.0-windows10.0.19041.0\App.baml
 E:\Projects\NowPlaying\obj\Debug\net10.0-windows10.0.19041.0\Views\NowPlayingFlyout.g.cs
 E:\Projects\NowPlaying\obj\Debug\net10.0-windows10.0.19041.0\GeneratedInternalTypeHelper.g.cs
 E:\Projects\NowPlaying\obj\Debug\net10.0-windows10.0.19041.0\Views\NowPlayingFlyout.baml
+E:\Projects\NowPlaying\obj\Debug\net10.0-windows10.0.19041.0\NowPlaying.sourcelink.json
+E:\Projects\NowPlaying\obj\Debug\net10.0-windows10.0.19041.0\Views\OptionsWindow.baml
+E:\Projects\NowPlaying\obj\Debug\net10.0-windows10.0.19041.0\Views\OptionsWindow.g.cs

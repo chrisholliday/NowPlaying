@@ -20,6 +20,7 @@ public partial class App : Application
     private const string AppMutexName = @"Local\NowPlaying_SingleInstance_Mutex";
     private Mutex? _instanceMutex;
 
+    private UserSettingsService? _userSettings;
     private IServiceProvider? _serviceProvider;
     private TaskbarIcon? _taskbarIcon;
     private NowPlayingFlyout? _flyout;
@@ -41,7 +42,10 @@ public partial class App : Application
             return;
         }
 
+        _userSettings = new UserSettingsService();
+
         var services = new ServiceCollection();
+        services.AddSingleton(_userSettings);
         ConfigureServices(services);
         _serviceProvider = services.BuildServiceProvider();
 
@@ -53,8 +57,10 @@ public partial class App : Application
         // Start media monitoring
         await mediaService.InitializeAsync();
 
-        // Show the flyout immediately on launch for instant feedback
-        _flyout.ShowFlyout();
+        if (!e.Args.Contains("--startup", StringComparer.OrdinalIgnoreCase))
+        {
+            _flyout.ShowFlyout();
+        }
     }
 
     private static void ConfigureServices(IServiceCollection services)
@@ -74,10 +80,15 @@ public partial class App : Application
         var openItem = new MenuItem { Header = "Show Now Playing" };
         openItem.Click += (s, e) => _flyout?.Toggle();
 
+        var optionsItem = new MenuItem { Header = "Options..." };
+        optionsItem.Click += (s, e) => new OptionsWindow(_userSettings!).ShowDialog();
+
         var exitItem = new MenuItem { Header = "Exit Now Playing" };
         exitItem.Click += (s, e) => Shutdown();
 
         contextMenu.Items.Add(openItem);
+        contextMenu.Items.Add(new Separator());
+        contextMenu.Items.Add(optionsItem);
         contextMenu.Items.Add(new Separator());
         contextMenu.Items.Add(exitItem);
 
@@ -132,6 +143,7 @@ public partial class App : Application
     {
         _taskbarIcon?.Dispose();
         _currentIcon?.Dispose();
+        _userSettings?.Dispose();
 
         if (_serviceProvider is IDisposable disposable)
         {
