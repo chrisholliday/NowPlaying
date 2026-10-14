@@ -1,5 +1,5 @@
 ﻿NowPlaying
-
+1.0.0.0
 
 winexe
 C#
@@ -12,9 +12,9 @@ TRACE;DEBUG;NET;NET10_0;NETCOREAPP;WINDOWS;WINDOWS10_0_19041_0;NET5_0_OR_GREATER
 E:\Projects\NowPlaying\App.xaml
 2-1594900553
 
-15-921154280
+17-657739954
 2161999918962
 Views\NowPlayingFlyout.xaml;Views\OptionsWindow.xaml;
 
-False
+True
 

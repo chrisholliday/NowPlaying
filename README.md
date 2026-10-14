@@ -84,4 +84,9 @@ dotnet build -c Release
 ```
 The compiled binary will be located in [bin/Release/net10.0-windows10.0.19041.0/NowPlaying.exe](bin/Release/net10.0-windows10.0.19041.0/NowPlaying.exe).
 
+### Run Unit Tests:
+```powershell
+dotnet test NowPlaying.Tests/NowPlaying.Tests.csproj
+```
+
 Right-click the tray icon and choose **Options...** to change the startup and appearance settings. Enabling startup adds a per-user Windows sign-in entry; it does not require administrator privileges.
