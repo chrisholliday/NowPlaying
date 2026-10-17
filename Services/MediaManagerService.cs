@@ -13,13 +13,15 @@ using NowPlaying.Models;
 
 namespace NowPlaying.Services;
 
-public class MediaManagerService : IMediaManagerService
+public class MediaManagerService : IMediaManagerService, IDisposable
 {
     private GlobalSystemMediaTransportControlsSessionManager? _sessionManager;
     private readonly ConcurrentDictionary<string, GlobalSystemMediaTransportControlsSession> _activeSessions = new();
     private readonly SemaphoreSlim _refreshLock = new(1, 1);
     private List<MediaSessionModel> _currentSessions = new();
+    private readonly HashSet<GlobalSystemMediaTransportControlsSession> _subscribedSessions = new();
     private System.Threading.Timer? _pollTimer;
+    private bool _disposed;
 
     public event EventHandler<IReadOnlyList<MediaSessionModel>>? SessionsUpdated;
 
@@ -38,6 +40,11 @@ public class MediaManagerService : IMediaManagerService
     {
         try
         {
+            if (_disposed)
+            {
+                return;
+            }
+
             _sessionManager = await GlobalSystemMediaTransportControlsSessionManager.RequestAsync();
             if (_sessionManager != null)
             {
@@ -45,9 +52,9 @@ public class MediaManagerService : IMediaManagerService
                 await RefreshSessionsAsync();
 
                 // Periodic poll (every 2.5 seconds) to catch browser media changes that don't trigger events
-                _pollTimer = new System.Threading.Timer(async _ =>
+                _pollTimer = new System.Threading.Timer(_ =>
                 {
-                    await RefreshSessionsAsync();
+                    _ = RefreshSessionsAsync();
                 }, null, TimeSpan.FromSeconds(2.5), TimeSpan.FromSeconds(2.5));
             }
         }
@@ -62,14 +69,17 @@ public class MediaManagerService : IMediaManagerService
         return RefreshSessionsAsync();
     }
 
-    private async void OnSessionsChanged(GlobalSystemMediaTransportControlsSessionManager sender, SessionsChangedEventArgs args)
+    private void OnSessionsChanged(GlobalSystemMediaTransportControlsSessionManager sender, SessionsChangedEventArgs args)
     {
-        await RefreshSessionsAsync();
+        _ = RefreshSessionsAsync();
     }
 
     private async Task RefreshSessionsAsync()
     {
-        if (_sessionManager == null) return;
+        if (_disposed || _sessionManager == null)
+        {
+            return;
+        }
 
         // Try to acquire lock, if already refreshing, skip
         if (!await _refreshLock.WaitAsync(100))
@@ -79,7 +89,14 @@ public class MediaManagerService : IMediaManagerService
 
         try
         {
+            if (_disposed || _sessionManager == null)
+            {
+                return;
+            }
+
             var rawSessions = _sessionManager.GetSessions();
+            CleanupStaleSubscriptions(rawSessions);
+
             var newSessionMap = new ConcurrentDictionary<string, GlobalSystemMediaTransportControlsSession>();
 
             // Process all detected media sessions concurrently with timeout protection
@@ -127,8 +144,6 @@ public class MediaManagerService : IMediaManagerService
         }
     }
 
-    private readonly HashSet<GlobalSystemMediaTransportControlsSession> _subscribedSessions = new();
-
     private void SubscribeSessionEvents(GlobalSystemMediaTransportControlsSession session)
     {
         lock (_subscribedSessions)
@@ -149,19 +164,48 @@ public class MediaManagerService : IMediaManagerService
         }
     }
 
-    private async void Session_TimelinePropertiesChanged(GlobalSystemMediaTransportControlsSession sender, TimelinePropertiesChangedEventArgs args)
+    private void CleanupStaleSubscriptions(IReadOnlyCollection<GlobalSystemMediaTransportControlsSession> currentSessions)
     {
-        await RefreshSessionsAsync();
+        lock (_subscribedSessions)
+        {
+            var currentSet = new HashSet<GlobalSystemMediaTransportControlsSession>(currentSessions);
+            var staleSessions = _subscribedSessions.Where(session => !currentSet.Contains(session)).ToList();
+
+            foreach (var session in staleSessions)
+            {
+                UnsubscribeSessionEvents(session);
+                _subscribedSessions.Remove(session);
+            }
+        }
     }
 
-    private async void Session_PlaybackInfoChanged(GlobalSystemMediaTransportControlsSession sender, PlaybackInfoChangedEventArgs args)
+    private void UnsubscribeSessionEvents(GlobalSystemMediaTransportControlsSession session)
     {
-        await RefreshSessionsAsync();
+        try
+        {
+            session.MediaPropertiesChanged -= Session_MediaPropertiesChanged;
+            session.PlaybackInfoChanged -= Session_PlaybackInfoChanged;
+            session.TimelinePropertiesChanged -= Session_TimelinePropertiesChanged;
+        }
+        catch
+        {
+            // Ignore event unsubscription issues for closed sessions
+        }
     }
 
-    private async void Session_MediaPropertiesChanged(GlobalSystemMediaTransportControlsSession sender, MediaPropertiesChangedEventArgs args)
+    private void Session_TimelinePropertiesChanged(GlobalSystemMediaTransportControlsSession sender, TimelinePropertiesChangedEventArgs args)
     {
-        await RefreshSessionsAsync();
+        _ = RefreshSessionsAsync();
+    }
+
+    private void Session_PlaybackInfoChanged(GlobalSystemMediaTransportControlsSession sender, PlaybackInfoChangedEventArgs args)
+    {
+        _ = RefreshSessionsAsync();
+    }
+
+    private void Session_MediaPropertiesChanged(GlobalSystemMediaTransportControlsSession sender, MediaPropertiesChangedEventArgs args)
+    {
+        _ = RefreshSessionsAsync();
     }
 
     private static async Task<MediaSessionModel?> ExtractSessionModelAsync(string sessionId, GlobalSystemMediaTransportControlsSession session)
@@ -345,5 +389,31 @@ public class MediaManagerService : IMediaManagerService
             catch { }
         }
         return false;
+    }
+
+    public void Dispose()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+
+        if (_sessionManager != null)
+        {
+            _sessionManager.SessionsChanged -= OnSessionsChanged;
+        }
+
+        _pollTimer?.Dispose();
+        _pollTimer = null;
+
+        foreach (var session in _subscribedSessions.ToList())
+        {
+            UnsubscribeSessionEvents(session);
+        }
+        _subscribedSessions.Clear();
+
+        _refreshLock.Dispose();
     }
 }

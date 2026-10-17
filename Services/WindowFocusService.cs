@@ -76,20 +76,12 @@ public partial class WindowFocusService : IWindowFocusService
 
     private IntPtr FindWindowForApp(string aumid)
     {
-        // 1. Try to extract candidate process name(s)
         var candidateNames = ExtractCandidateProcessNames(aumid);
-
         var matchingHwnds = new List<(IntPtr Hwnd, int Score)>();
 
         EnumWindows((hWnd, lParam) =>
         {
             if (!IsWindowVisible(hWnd))
-            {
-                return true;
-            }
-
-            int textLength = GetWindowTextLength(hWnd);
-            if (textLength == 0)
             {
                 return true;
             }
@@ -105,19 +97,26 @@ public partial class WindowFocusService : IWindowFocusService
                 using var process = Process.GetProcessById((int)processId);
                 string procName = process.ProcessName;
 
-                foreach (var candidate in candidateNames)
+                foreach (string candidate in candidateNames)
                 {
-                    if (string.Equals(procName, candidate, StringComparison.OrdinalIgnoreCase))
+                    if (!IsProcessMatch(procName, candidate, out bool exactMatch))
                     {
-                        var sb = new StringBuilder(textLength + 1);
-                        GetWindowText(hWnd, sb, sb.Capacity);
-                        string title = sb.ToString();
-
-                        // Prefer windows that have a meaningful title
-                        int score = string.IsNullOrWhiteSpace(title) ? 1 : 10;
-                        matchingHwnds.Add((hWnd, score));
-                        break;
+                        continue;
                     }
+
+                    string title = GetWindowTitle(hWnd);
+                    int score = exactMatch ? 20 : 12;
+                    if (string.IsNullOrWhiteSpace(title))
+                    {
+                        score -= 4;
+                    }
+                    else
+                    {
+                        score += 4;
+                    }
+
+                    matchingHwnds.Add((hWnd, score));
+                    break;
                 }
             }
             catch
@@ -130,7 +129,6 @@ public partial class WindowFocusService : IWindowFocusService
 
         if (matchingHwnds.Count > 0)
         {
-            // Pick highest scored window
             matchingHwnds.Sort((a, b) => b.Score.CompareTo(a.Score));
             return matchingHwnds[0].Hwnd;
         }
@@ -142,76 +140,109 @@ public partial class WindowFocusService : IWindowFocusService
     {
         var candidates = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        // e.g. "Spotify.exe", "C:\...\chrome.exe"
+        void AddTokenizedCandidates(string value)
+        {
+            foreach (string token in value.Split(['!', '.', '_', '-', ' ', '\\', '/', ':', ','], StringSplitOptions.RemoveEmptyEntries))
+            {
+                if (token.Length >= 3)
+                {
+                    candidates.Add(token);
+                }
+            }
+        }
+
         if (aumid.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
         {
-            string fileName = Path.GetFileNameWithoutExtension(aumid);
-            candidates.Add(fileName);
+            candidates.Add(Path.GetFileNameWithoutExtension(aumid));
         }
         else if (aumid.Contains(".exe", StringComparison.OrdinalIgnoreCase))
         {
             int idx = aumid.IndexOf(".exe", StringComparison.OrdinalIgnoreCase);
             string sub = aumid[..idx];
-            int slash = sub.LastIndexOfAny(new[] { '\\', '/' });
-            string name = slash >= 0 ? sub[(slash + 1)..] : sub;
-            candidates.Add(name);
+            int slash = sub.LastIndexOfAny(['\\', '/']);
+            candidates.Add(slash >= 0 ? sub[(slash + 1)..] : sub);
         }
 
-        // Handle UWP / Store AUMID e.g. "SpotifyAB.SpotifyMusic_zpdnekdrzrea0!Spotify"
         if (aumid.Contains('!'))
         {
-            var parts = aumid.Split('!');
+            string[] parts = aumid.Split('!');
             if (parts.Length > 1)
             {
                 candidates.Add(parts[1]);
+                AddTokenizedCandidates(parts[1]);
             }
-            if (parts.Length > 0 && parts[0].Contains('.'))
+
+            if (parts.Length > 0)
             {
-                var pkgParts = parts[0].Split('.');
-                foreach (var p in pkgParts)
-                {
-                    if (p.Length > 3)
-                    {
-                        candidates.Add(p);
-                    }
-                }
+                AddTokenizedCandidates(parts[0]);
             }
         }
 
-        // Common known media players mapping
+        AddTokenizedCandidates(aumid);
+
         if (aumid.Contains("Spotify", StringComparison.OrdinalIgnoreCase))
         {
             candidates.Add("Spotify");
         }
+
         if (aumid.Contains("Chrome", StringComparison.OrdinalIgnoreCase))
         {
             candidates.Add("chrome");
+            candidates.Add("chromium");
         }
+
         if (aumid.Contains("Edge", StringComparison.OrdinalIgnoreCase))
         {
             candidates.Add("msedge");
         }
+
         if (aumid.Contains("Firefox", StringComparison.OrdinalIgnoreCase))
         {
             candidates.Add("firefox");
         }
+
         if (aumid.Contains("Brave", StringComparison.OrdinalIgnoreCase))
         {
             candidates.Add("brave");
         }
+
         if (aumid.Contains("AppleMusic", StringComparison.OrdinalIgnoreCase))
         {
             candidates.Add("AppleMusic");
         }
+
         if (aumid.Contains("VLC", StringComparison.OrdinalIgnoreCase))
         {
             candidates.Add("vlc");
         }
 
-        // Also add the raw aumid as a candidate
         candidates.Add(aumid);
-
         return [.. candidates];
+    }
+
+    private static bool IsProcessMatch(string processName, string candidate, out bool exactMatch)
+    {
+        exactMatch = string.Equals(processName, candidate, StringComparison.OrdinalIgnoreCase);
+        if (exactMatch)
+        {
+            return true;
+        }
+
+        return processName.Contains(candidate, StringComparison.OrdinalIgnoreCase)
+            || candidate.Contains(processName, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string GetWindowTitle(IntPtr hWnd)
+    {
+        int textLength = GetWindowTextLength(hWnd);
+        if (textLength <= 0)
+        {
+            return string.Empty;
+        }
+
+        var sb = new StringBuilder(textLength + 1);
+        GetWindowText(hWnd, sb, sb.Capacity);
+        return sb.ToString();
     }
 
     private static void BringToFront(IntPtr hWnd)

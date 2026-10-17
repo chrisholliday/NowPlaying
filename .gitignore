@@ -1,0 +1,21 @@
+﻿# Visual Studio user and workspace files
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Build output
+[Bb]in/
+[Oo]bj/
+[Aa]rtifacts/
+TestResults/
+
+# Temporary files and logs
+*.log
+*.tmp
+*.bak
+
+# Operating system metadata
+.DS_Store
+Thumbs.db
