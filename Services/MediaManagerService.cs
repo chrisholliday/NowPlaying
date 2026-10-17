@@ -17,7 +17,7 @@ public class MediaManagerService : IMediaManagerService, IDisposable
 {
     private GlobalSystemMediaTransportControlsSessionManager? _sessionManager;
     private readonly ConcurrentDictionary<string, GlobalSystemMediaTransportControlsSession> _activeSessions = new();
-    private readonly SemaphoreSlim _refreshLock = new(1, 1);
+    private readonly RefreshGate _refreshGate = new();
     private readonly object _lifecycleLock = new();
     private List<MediaSessionModel> _currentSessions = new();
     private readonly HashSet<GlobalSystemMediaTransportControlsSession> _subscribedSessions = new();
@@ -103,7 +103,7 @@ public class MediaManagerService : IMediaManagerService, IDisposable
         }
 
         // Try to acquire lock, if already refreshing, skip
-        if (!await _refreshLock.WaitAsync(100))
+        if (!await _refreshGate.WaitAsync(TimeSpan.FromMilliseconds(100)))
         {
             return;
         }
@@ -144,13 +144,7 @@ public class MediaManagerService : IMediaManagerService, IDisposable
                 _activeSessions[kvp.Key] = kvp.Value;
             }
 
-            var modelList = extractedResults
-                .Where(m => m != null)
-                .Select(m => m!)
-                // Currently playing sessions at top, then paused sessions
-                .OrderByDescending(s => s.IsPlaying)
-                .ThenBy(s => s.AppName)
-                .ToList();
+            var modelList = MediaSessionModelFactory.CreateOrdered(extractedResults);
 
             lock (_currentSessions)
             {
@@ -165,7 +159,7 @@ public class MediaManagerService : IMediaManagerService, IDisposable
         }
         finally
         {
-            _refreshLock.Release();
+            _refreshGate.Release();
         }
     }
 
@@ -238,7 +232,7 @@ public class MediaManagerService : IMediaManagerService, IDisposable
         _ = RefreshSessionsAsync();
     }
 
-    private static async Task<MediaSessionModel?> ExtractSessionModelAsync(string sessionId, GlobalSystemMediaTransportControlsSession session)
+    private static async Task<MediaSessionSnapshot?> ExtractSessionModelAsync(string sessionId, GlobalSystemMediaTransportControlsSession session)
     {
         try
         {
@@ -253,12 +247,6 @@ public class MediaManagerService : IMediaManagerService, IDisposable
                 playbackInfo = session.GetPlaybackInfo();
             }
             catch { }
-
-            // If session is closed, ignore it
-            if (playbackInfo != null && playbackInfo.PlaybackStatus == GlobalSystemMediaTransportControlsSessionPlaybackStatus.Closed)
-            {
-                return null;
-            }
 
             bool isPlaying = playbackInfo?.PlaybackStatus == GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing;
             var controls = playbackInfo?.Controls;
@@ -297,13 +285,7 @@ public class MediaManagerService : IMediaManagerService, IDisposable
             string artist = mediaProps?.Artist ?? string.Empty;
             string album = mediaProps?.AlbumTitle ?? string.Empty;
 
-            // Fallback title to application name if metadata is empty
-            if (string.IsNullOrWhiteSpace(title) && string.IsNullOrWhiteSpace(artist))
-            {
-                title = appName;
-            }
-
-            return new MediaSessionModel
+            return new MediaSessionSnapshot
             {
                 Id = sessionId,
                 SourceAppUserModelId = aumid,
@@ -313,14 +295,15 @@ public class MediaManagerService : IMediaManagerService, IDisposable
                 Artist = artist,
                 Album = album,
                 Thumbnail = thumbnail,
+                IsClosed = playbackInfo?.PlaybackStatus == GlobalSystemMediaTransportControlsSessionPlaybackStatus.Closed,
                 IsPlaying = isPlaying,
-                CanPlay = controls?.IsPlayEnabled ?? true,
-                CanPause = controls?.IsPauseEnabled ?? true,
-                CanSkipNext = controls?.IsNextEnabled ?? false,
-                CanSkipPrevious = controls?.IsPreviousEnabled ?? false,
+                CanPlay = controls?.IsPlayEnabled,
+                CanPause = controls?.IsPauseEnabled,
+                CanSkipNext = controls?.IsNextEnabled,
+                CanSkipPrevious = controls?.IsPreviousEnabled,
                 Position = timeline?.Position ?? TimeSpan.Zero,
-                Duration = (timeline?.EndTime ?? TimeSpan.Zero) - (timeline?.StartTime ?? TimeSpan.Zero),
-                LastUpdated = DateTime.UtcNow
+                StartTime = timeline?.StartTime ?? TimeSpan.Zero,
+                EndTime = timeline?.EndTime ?? TimeSpan.Zero
             };
         }
         catch (Exception ex)
@@ -449,5 +432,7 @@ public class MediaManagerService : IMediaManagerService, IDisposable
             }
             _subscribedSessions.Clear();
         }
+
+        _refreshGate.Dispose();
     }
 }

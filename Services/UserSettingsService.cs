@@ -26,41 +26,44 @@ public sealed class UserSettingsService : IDisposable
     private const string RunRegistryPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
     private const string RunValueName = "NowPlaying";
     private readonly string _settingsPath;
+    private readonly Func<bool> _isRegisteredForStartup;
+    private readonly Action<bool> _setStartupRegistration;
+    private readonly Action<ThemePreference> _applyTheme;
+    private readonly bool _listeningForSystemPreferences;
 
     public UserSettings Current { get; }
 
     public UserSettingsService()
+        : this(GetDefaultSettingsPath(), IsRegisteredForStartup, SetStartupRegistration, ApplyTheme, listenForSystemPreferences: true)
     {
-        string settingsDirectory = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "NowPlaying");
-        _settingsPath = Path.Combine(settingsDirectory, "settings.json");
-        Current = LoadSettings();
-        Current.RunAtStartup = IsRegisteredForStartup();
+    }
 
-        Microsoft.Win32.SystemEvents.UserPreferenceChanged += OnUserPreferenceChanged;
-        ApplyTheme();
+    internal UserSettingsService(
+        string settingsPath,
+        Func<bool> isRegisteredForStartup,
+        Action<bool> setStartupRegistration,
+        Action<ThemePreference> applyTheme,
+        bool listenForSystemPreferences = false)
+    {
+        _settingsPath = settingsPath;
+        _isRegisteredForStartup = isRegisteredForStartup;
+        _setStartupRegistration = setStartupRegistration;
+        _applyTheme = applyTheme;
+        _listeningForSystemPreferences = listenForSystemPreferences;
+        Current = LoadSettings();
+        Current.RunAtStartup = _isRegisteredForStartup();
+
+        if (_listeningForSystemPreferences)
+        {
+            Microsoft.Win32.SystemEvents.UserPreferenceChanged += OnUserPreferenceChanged;
+        }
+
+        _applyTheme(Current.Theme);
     }
 
     public void SetRunAtStartup(bool enabled)
     {
-        using RegistryKey? runKey = Registry.CurrentUser.OpenSubKey(RunRegistryPath, writable: true)
-            ?? Registry.CurrentUser.CreateSubKey(RunRegistryPath, writable: true);
-
-        if (runKey is null)
-        {
-            throw new InvalidOperationException("Could not open the current-user startup registry key.");
-        }
-
-        if (enabled)
-        {
-            runKey.SetValue(RunValueName, GetStartupCommand(), RegistryValueKind.String);
-        }
-        else
-        {
-            runKey.DeleteValue(RunValueName, throwOnMissingValue: false);
-        }
-
+        _setStartupRegistration(enabled);
         Current.RunAtStartup = enabled;
         SaveSettings();
     }
@@ -69,7 +72,7 @@ public sealed class UserSettingsService : IDisposable
     {
         Current.Theme = preference;
         SaveSettings();
-        ApplyTheme();
+        _applyTheme(preference);
     }
 
     private UserSettings LoadSettings()
@@ -113,6 +116,34 @@ public sealed class UserSettingsService : IDisposable
         return runKey?.GetValue(RunValueName) is string;
     }
 
+    private static string GetDefaultSettingsPath()
+    {
+        string settingsDirectory = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "NowPlaying");
+        return Path.Combine(settingsDirectory, "settings.json");
+    }
+
+    private static void SetStartupRegistration(bool enabled)
+    {
+        using RegistryKey? runKey = Registry.CurrentUser.OpenSubKey(RunRegistryPath, writable: true)
+            ?? Registry.CurrentUser.CreateSubKey(RunRegistryPath, writable: true);
+
+        if (runKey is null)
+        {
+            throw new InvalidOperationException("Could not open the current-user startup registry key.");
+        }
+
+        if (enabled)
+        {
+            runKey.SetValue(RunValueName, GetStartupCommand(), RegistryValueKind.String);
+        }
+        else
+        {
+            runKey.DeleteValue(RunValueName, throwOnMissingValue: false);
+        }
+    }
+
     private static string GetStartupCommand()
     {
         string processPath = Environment.ProcessPath
@@ -128,19 +159,19 @@ public sealed class UserSettingsService : IDisposable
         return $"\"{processPath}\" --startup";
     }
 
-    private void OnUserPreferenceChanged(object sender, Microsoft.Win32.UserPreferenceChangedEventArgs e)
+    private void OnUserPreferenceChanged(object? sender, Microsoft.Win32.UserPreferenceChangedEventArgs e)
     {
         if (Current.Theme == ThemePreference.System && e.Category is Microsoft.Win32.UserPreferenceCategory.Color or Microsoft.Win32.UserPreferenceCategory.General)
         {
-            System.Windows.Application.Current?.Dispatcher.BeginInvoke(ApplyTheme);
+            System.Windows.Application.Current?.Dispatcher.BeginInvoke(() => _applyTheme(Current.Theme));
         }
     }
 
-    private void ApplyTheme()
+    private static void ApplyTheme(ThemePreference preference)
     {
         System.Windows.Application.Current?.Dispatcher.Invoke(() =>
         {
-            ApplicationTheme theme = Current.Theme switch
+            ApplicationTheme theme = preference switch
             {
                 ThemePreference.Light => ApplicationTheme.Light,
                 ThemePreference.Dark => ApplicationTheme.Dark,
@@ -192,6 +223,9 @@ public sealed class UserSettingsService : IDisposable
 
     public void Dispose()
     {
-        Microsoft.Win32.SystemEvents.UserPreferenceChanged -= OnUserPreferenceChanged;
+        if (_listeningForSystemPreferences)
+        {
+            Microsoft.Win32.SystemEvents.UserPreferenceChanged -= OnUserPreferenceChanged;
+        }
     }
 }

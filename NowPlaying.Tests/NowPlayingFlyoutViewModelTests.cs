@@ -55,6 +55,45 @@ public sealed class NowPlayingFlyoutViewModelTests
     }
 
     [Fact]
+    public void UpdateSessions_ReordersExistingCardsAndSwitchesPrimaryPlayer()
+    {
+        var viewModel = CreateViewModel();
+        viewModel.UpdateSessions(
+        [
+            TestMediaSession.Create("spotify", isPlaying: true),
+            TestMediaSession.Create("browser")
+        ]);
+        var spotifyCard = viewModel.MediaCards[0];
+        var browserCard = viewModel.MediaCards[1];
+
+        viewModel.UpdateSessions(
+        [
+            TestMediaSession.Create("browser", isPlaying: true),
+            TestMediaSession.Create("spotify")
+        ]);
+
+        Assert.Same(browserCard, viewModel.MediaCards[0]);
+        Assert.Same(spotifyCard, viewModel.MediaCards[1]);
+        Assert.Same(browserCard, viewModel.PrimarySession);
+        Assert.True(viewModel.IsAnyPlaying);
+    }
+
+    [Fact]
+    public void UpdateSessions_WhenAllSessionsDisappear_ClearsActiveState()
+    {
+        var viewModel = CreateViewModel();
+        viewModel.UpdateSessions([TestMediaSession.Create("player", isPlaying: true)]);
+
+        viewModel.UpdateSessions([]);
+
+        Assert.Empty(viewModel.MediaCards);
+        Assert.Null(viewModel.PrimarySession);
+        Assert.False(viewModel.HasActiveMedia);
+        Assert.False(viewModel.IsAnyPlaying);
+        Assert.Equal("Now Playing", viewModel.HeaderTitle);
+    }
+
+    [Fact]
     public async Task RefreshAsync_RequestsARefreshFromTheMediaService()
     {
         var mediaService = new FakeMediaManagerService();

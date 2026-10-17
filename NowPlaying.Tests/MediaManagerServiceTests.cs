@@ -1,23 +1,19 @@
-﻿using System.Reflection;
-using System.Threading;
-using NowPlaying.Services;
+﻿using NowPlaying.Services;
 
 namespace NowPlaying.Tests;
 
 public sealed class MediaManagerServiceTests
 {
     [Fact]
-    public void Dispose_DoesNotDisposeRefreshLockHeldByAnInFlightRefresh()
+    public async Task Dispose_DoesNotInterruptReleaseOfAnActiveRefresh()
     {
-        var service = new MediaManagerService();
-        var refreshLock = (SemaphoreSlim)typeof(MediaManagerService)
-            .GetField("_refreshLock", BindingFlags.Instance | BindingFlags.NonPublic)!
-            .GetValue(service)!;
+        var gate = new RefreshGate();
 
-        Assert.True(refreshLock.Wait(0));
+        Assert.True(await gate.WaitAsync(TimeSpan.Zero));
 
-        service.Dispose();
+        gate.Dispose();
 
-        refreshLock.Release();
+        gate.Release();
+        Assert.False(await gate.WaitAsync(TimeSpan.Zero));
     }
 }
