@@ -18,10 +18,11 @@ public class MediaManagerService : IMediaManagerService, IDisposable
     private GlobalSystemMediaTransportControlsSessionManager? _sessionManager;
     private readonly ConcurrentDictionary<string, GlobalSystemMediaTransportControlsSession> _activeSessions = new();
     private readonly SemaphoreSlim _refreshLock = new(1, 1);
+    private readonly object _lifecycleLock = new();
     private List<MediaSessionModel> _currentSessions = new();
     private readonly HashSet<GlobalSystemMediaTransportControlsSession> _subscribedSessions = new();
     private System.Threading.Timer? _pollTimer;
-    private bool _disposed;
+    private volatile bool _disposed;
 
     public event EventHandler<IReadOnlyList<MediaSessionModel>>? SessionsUpdated;
 
@@ -45,11 +46,31 @@ public class MediaManagerService : IMediaManagerService, IDisposable
                 return;
             }
 
-            _sessionManager = await GlobalSystemMediaTransportControlsSessionManager.RequestAsync();
-            if (_sessionManager != null)
+            var sessionManager = await GlobalSystemMediaTransportControlsSessionManager.RequestAsync();
+            if (sessionManager == null)
             {
+                return;
+            }
+
+            lock (_lifecycleLock)
+            {
+                if (_disposed)
+                {
+                    return;
+                }
+
+                _sessionManager = sessionManager;
                 _sessionManager.SessionsChanged += OnSessionsChanged;
-                await RefreshSessionsAsync();
+            }
+
+            await RefreshSessionsAsync();
+
+            lock (_lifecycleLock)
+            {
+                if (_disposed)
+                {
+                    return;
+                }
 
                 // Periodic poll (every 2.5 seconds) to catch browser media changes that don't trigger events
                 _pollTimer = new System.Threading.Timer(_ =>
@@ -112,6 +133,10 @@ public class MediaManagerService : IMediaManagerService, IDisposable
             }).ToList();
 
             var extractedResults = await Task.WhenAll(extractionTasks);
+            if (_disposed)
+            {
+                return;
+            }
 
             _activeSessions.Clear();
             foreach (var kvp in newSessionMap)
@@ -148,6 +173,11 @@ public class MediaManagerService : IMediaManagerService, IDisposable
     {
         lock (_subscribedSessions)
         {
+            if (_disposed)
+            {
+                return;
+            }
+
             if (_subscribedSessions.Add(session))
             {
                 try
@@ -393,27 +423,31 @@ public class MediaManagerService : IMediaManagerService, IDisposable
 
     public void Dispose()
     {
-        if (_disposed)
+        lock (_lifecycleLock)
         {
-            return;
+            if (_disposed)
+            {
+                return;
+            }
+
+            _disposed = true;
+
+            if (_sessionManager != null)
+            {
+                _sessionManager.SessionsChanged -= OnSessionsChanged;
+            }
+
+            _pollTimer?.Dispose();
+            _pollTimer = null;
         }
 
-        _disposed = true;
-
-        if (_sessionManager != null)
+        lock (_subscribedSessions)
         {
-            _sessionManager.SessionsChanged -= OnSessionsChanged;
+            foreach (var session in _subscribedSessions.ToList())
+            {
+                UnsubscribeSessionEvents(session);
+            }
+            _subscribedSessions.Clear();
         }
-
-        _pollTimer?.Dispose();
-        _pollTimer = null;
-
-        foreach (var session in _subscribedSessions.ToList())
-        {
-            UnsubscribeSessionEvents(session);
-        }
-        _subscribedSessions.Clear();
-
-        _refreshLock.Dispose();
     }
 }

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Drawing;
 using System.Linq;
-using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using H.NotifyIcon;
@@ -18,7 +17,7 @@ namespace NowPlaying;
 public partial class App : Application
 {
     private const string AppMutexName = @"Local\NowPlaying_SingleInstance_Mutex";
-    private Mutex? _instanceMutex;
+    private SingleInstanceGuard? _instanceGuard;
 
     private UserSettingsService? _userSettings;
     private IServiceProvider? _serviceProvider;
@@ -30,8 +29,8 @@ public partial class App : Application
     {
         base.OnStartup(e);
 
-        _instanceMutex = new Mutex(true, AppMutexName, out bool isNewInstance);
-        if (!isNewInstance)
+        _instanceGuard = new SingleInstanceGuard(AppMutexName);
+        if (!_instanceGuard.IsOwner)
         {
             MessageBox.Show(
                 "Now Playing is already running!\nLook for the music note icon in your system tray (bottom-right taskbar, or inside the ^ overflow menu).",
@@ -150,8 +149,7 @@ public partial class App : Application
             disposable.Dispose();
         }
 
-        _instanceMutex?.ReleaseMutex();
-        _instanceMutex?.Dispose();
+        _instanceGuard?.Dispose();
 
         base.OnExit(e);
     }

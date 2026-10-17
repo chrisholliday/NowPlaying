@@ -14,7 +14,7 @@ namespace NowPlaying.Services;
 public static class AppInfoHelper
 {
     private static readonly ConcurrentDictionary<string, string> NameCache = new(StringComparer.OrdinalIgnoreCase);
-    private static readonly ConcurrentDictionary<string, ImageSource?> IconCache = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly ConcurrentDictionary<string, Lazy<ImageSource?>> IconCache = new(StringComparer.OrdinalIgnoreCase);
 
     public static string GetFriendlyAppName(string aumid)
     {
@@ -40,19 +40,18 @@ public static class AppInfoHelper
             return null;
         }
 
-        if (IconCache.TryGetValue(aumid, out var cachedIcon))
+        var cachedIcon = IconCache.GetOrAdd(aumid, static key => new Lazy<ImageSource?>(() =>
         {
-            return cachedIcon;
-        }
+            var icon = ResolveIcon(key);
+            if (icon != null && icon.CanFreeze)
+            {
+                icon.Freeze();
+            }
 
-        var icon = ResolveIcon(aumid);
-        if (icon != null && icon.CanFreeze)
-        {
-            icon.Freeze();
-        }
+            return icon;
+        }));
 
-        IconCache[aumid] = icon;
-        return icon;
+        return cachedIcon.Value;
     }
 
     private static string ResolveName(string aumid)
