@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows;
+using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using NowPlaying.Models;
@@ -14,6 +15,7 @@ public partial class NowPlayingFlyoutViewModel : ObservableObject
 {
     private readonly IMediaManagerService _mediaService;
     private readonly IWindowFocusService _windowFocusService;
+    private readonly DispatcherTimer _timelineTimer = new() { Interval = TimeSpan.FromSeconds(1) };
 
     [ObservableProperty]
     private ObservableCollection<MediaCardViewModel> _mediaCards = new();
@@ -36,6 +38,15 @@ public partial class NowPlayingFlyoutViewModel : ObservableObject
     {
         _mediaService = mediaService;
         _windowFocusService = windowFocusService;
+
+        _timelineTimer.Tick += (_, _) =>
+        {
+            DateTime utcNow = DateTime.UtcNow;
+            foreach (var card in MediaCards)
+            {
+                card.UpdateTimelineDisplay(utcNow);
+            }
+        };
 
         _mediaService.SessionsUpdated += OnSessionsUpdated;
         UpdateSessions(_mediaService.CurrentSessions);
@@ -112,6 +123,14 @@ public partial class NowPlayingFlyoutViewModel : ObservableObject
         HasActiveMedia = MediaCards.Count > 0;
         PrimarySession = MediaCards.FirstOrDefault(c => c.IsPlaying) ?? MediaCards.FirstOrDefault();
         IsAnyPlaying = MediaCards.Any(c => c.IsPlaying);
+        if (IsAnyPlaying)
+        {
+            _timelineTimer.Start();
+        }
+        else
+        {
+            _timelineTimer.Stop();
+        }
 
         HeaderTitle = MediaCards.Count > 1
             ? $"Now Playing ({MediaCards.Count})"

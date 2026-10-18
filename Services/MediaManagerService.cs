@@ -284,6 +284,11 @@ public class MediaManagerService : IMediaManagerService, IDisposable
             string title = mediaProps?.Title ?? string.Empty;
             string artist = mediaProps?.Artist ?? string.Empty;
             string album = mediaProps?.AlbumTitle ?? string.Empty;
+            DateTime lastUpdated = timeline?.LastUpdatedTime.UtcDateTime ?? DateTime.UtcNow;
+            if (lastUpdated < DateTime.UnixEpoch)
+            {
+                lastUpdated = DateTime.UtcNow;
+            }
 
             return new MediaSessionSnapshot
             {
@@ -303,7 +308,8 @@ public class MediaManagerService : IMediaManagerService, IDisposable
                 CanSkipPrevious = controls?.IsPreviousEnabled,
                 Position = timeline?.Position ?? TimeSpan.Zero,
                 StartTime = timeline?.StartTime ?? TimeSpan.Zero,
-                EndTime = timeline?.EndTime ?? TimeSpan.Zero
+                EndTime = timeline?.EndTime ?? TimeSpan.Zero,
+                LastUpdated = lastUpdated
             };
         }
         catch (Exception ex)

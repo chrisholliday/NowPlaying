@@ -12,6 +12,8 @@ public partial class MediaCardViewModel : ObservableObject
 {
     private readonly IMediaManagerService _mediaService;
     private readonly IWindowFocusService _windowFocusService;
+    private DateTime _positionUpdatedAt;
+    private DateTime _displayTime;
 
     [ObservableProperty]
     private string _id;
@@ -62,17 +64,39 @@ public partial class MediaCardViewModel : ObservableObject
 
     public bool HasTimeline => Duration > TimeSpan.Zero;
 
+    public TimeSpan CurrentPosition
+    {
+        get
+        {
+            if (!IsPlaying)
+            {
+                return Position;
+            }
+
+            TimeSpan elapsed = _displayTime - _positionUpdatedAt;
+            if (elapsed < TimeSpan.Zero)
+            {
+                elapsed = TimeSpan.Zero;
+            }
+
+            TimeSpan currentPosition = Position + elapsed;
+            return Duration > TimeSpan.Zero && currentPosition > Duration
+                ? Duration
+                : currentPosition;
+        }
+    }
+
     public double ProgressPercentage
     {
         get
         {
             if (Duration <= TimeSpan.Zero) return 0;
-            double p = (Position.TotalSeconds / Duration.TotalSeconds) * 100.0;
+            double p = (CurrentPosition.TotalSeconds / Duration.TotalSeconds) * 100.0;
             return Math.Clamp(p, 0, 100);
         }
     }
 
-    public string PositionText => FormatTime(Position);
+    public string PositionText => FormatTime(CurrentPosition);
 
     public string DurationText => FormatTime(Duration);
 
@@ -108,12 +132,26 @@ public partial class MediaCardViewModel : ObservableObject
         CanSkipPrevious = model.CanSkipPrevious;
         Position = model.Position;
         Duration = model.Duration;
+        _positionUpdatedAt = model.LastUpdated;
+        _displayTime = DateTime.UtcNow;
 
         OnPropertyChanged(nameof(HasThumbnail));
         OnPropertyChanged(nameof(HasTimeline));
+        OnPropertyChanged(nameof(CurrentPosition));
         OnPropertyChanged(nameof(ProgressPercentage));
         OnPropertyChanged(nameof(PositionText));
         OnPropertyChanged(nameof(DurationText));
+    }
+
+    public void UpdateTimelineDisplay(DateTime utcNow)
+    {
+        _displayTime = utcNow;
+        if (IsPlaying)
+        {
+            OnPropertyChanged(nameof(CurrentPosition));
+            OnPropertyChanged(nameof(ProgressPercentage));
+            OnPropertyChanged(nameof(PositionText));
+        }
     }
 
     private static string FormatTime(TimeSpan time)

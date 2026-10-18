@@ -32,6 +32,22 @@ public sealed class MediaCardViewModelTests
     }
 
     [Fact]
+    public void UpdateTimelineDisplay_AdvancesPlayingPositionFromTimelineTimestamp()
+    {
+        var timelineUpdatedAt = new DateTime(2026, 10, 18, 12, 0, 0, DateTimeKind.Utc);
+        var viewModel = CreateViewModel(TestMediaSession.Create(
+            "player",
+            isPlaying: true,
+            position: TimeSpan.FromSeconds(8),
+            duration: TimeSpan.FromMinutes(3)) with { LastUpdated = timelineUpdatedAt });
+
+        viewModel.UpdateTimelineDisplay(timelineUpdatedAt.AddSeconds(60));
+
+        Assert.Equal("1:08", viewModel.PositionText);
+        Assert.Equal(68d / 180d * 100d, viewModel.ProgressPercentage, precision: 8);
+    }
+
+    [Fact]
     public void EmptyTitle_FallsBackToAppName()
     {
         var model = TestMediaSession.Create("Spotify", title: "   ");

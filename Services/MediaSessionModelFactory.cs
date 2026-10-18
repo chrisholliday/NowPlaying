@@ -23,6 +23,7 @@ internal sealed record MediaSessionSnapshot
     public System.TimeSpan Position { get; init; }
     public System.TimeSpan StartTime { get; init; }
     public System.TimeSpan EndTime { get; init; }
+    public System.DateTime LastUpdated { get; init; } = System.DateTime.UtcNow;
 }
 
 internal static class MediaSessionModelFactory
@@ -58,7 +59,7 @@ internal static class MediaSessionModelFactory
             CanSkipPrevious = snapshot.CanSkipPrevious ?? false,
             Position = snapshot.Position,
             Duration = snapshot.EndTime - snapshot.StartTime,
-            LastUpdated = System.DateTime.UtcNow
+            LastUpdated = snapshot.LastUpdated
         };
     }
 
